@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Users;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class UsersController extends Controller
@@ -53,13 +54,22 @@ class UsersController extends Controller
                 'errors' => $validatedData->errors()
             ], 422);
         }
+        $filePath = null;
         if ($request->hasFile('profile_image')) {
             $file = $request->file('profile_image');
-            $filePath = $file->store('profile_images', 'public'); // 'public' is the disk name
+            // Store file in 'public/profile_images' directory
+            $filePath = $file->store('profile_images', 'public');
         }
         // Save the form submission to the database
         //$formSubmission = FormSubmission::create($validatedData);
-        $formSubmission= Users::create($request->all());
+        $formSubmission=  /* User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'profile_image' => $filePath,
+                'description' => $request->description,
+                'role_id' => $request->role_id,
+            ]); */ Users::create($request->all());
 
         // Return a success response
         return response()->json([
@@ -67,6 +77,22 @@ class UsersController extends Controller
             'data' => $formSubmission,
             'message' => 'Form submitted successfully!',
         ], 201);
+    }
+
+    public function show($id)
+    {
+        $user = User::with('role_id')->find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        return response()->json([
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'role_name' => $user->role_id ? $user->role->name : 'No Role'
+        ]);
     }
     
 }
