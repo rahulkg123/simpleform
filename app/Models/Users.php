@@ -17,19 +17,5 @@ class Users extends Model
         return $this->belongsTo(Role::class);
     }
 
-    public function show($id)
-    {
-        $user = User::with('role_id')->find($id);
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        return response()->json([
-            'name' => $user->name,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'role_name' => $user->role_id ? $user->role->name : 'No Role'
-        ]);
-    }
+    
 }

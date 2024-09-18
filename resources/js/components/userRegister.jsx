@@ -9,11 +9,13 @@ const Form = () => {
     const [phone, setPhone] = useState('');
     const [profileImage, setProfileImage] = useState(null);
     const [roleId, setRoleId] = useState('');
+    const [roleName, setRoleName] = useState('');
     const [message, setMessage] = useState('');
     const [roles, setRoles] = useState([]);
     const [users, setUsers] = useState([]);
     const [errors, setErrors] = useState({});
-
+    const [description, setDescription] = useState('');
+    
     useEffect(() => {
         // Fetch roles and users on component mount
         axios.get('/roles').then(response => {
@@ -29,6 +31,9 @@ const Form = () => {
         try {
             const response = await axios.get('/users');
             setUsers(response.data);
+            const roleNames = await axios.get('/user/'+response.data.id);
+            console.log(roleNames.data);
+            setRoleName(roleNames.data);
         } catch (error) {
             console.error('Error fetching users:', error);
         }
@@ -43,23 +48,24 @@ const Form = () => {
         formData.append('phone', phone);
         formData.append('profile_image', profileImage);
         formData.append('role_id', roleId);
+        formData.append('description', description);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
         try {
-            await axios.post('/register-user', formData, {
+            const response = await axios.post('/register-user', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            setMessage(response.data.message);
+            setMessage('<i className="float-right badge bg-success mb-2">' + response.data.message+ '</i>');
             fetchUsers(); // Refresh the user list after submission
             setErrors({});
         } catch (error) {
+            console.log(error)
             if (error.response && error.response.status === 422) {
-                // Handle validation errors
                 setErrors(error.response.data.errors);
             } else {
-                setMessage('Error submitting form.');
+                setMessage('<i className="badge bg-danger mb-2">Error submitting form.</i>');
                 console.error('Submission error:', error);
             }
             //setMessage('Error submitting form.');
@@ -70,7 +76,8 @@ const Form = () => {
         <div className='container mt-3'>
             <div className='row'>
                 
-                <h1 className='bg-success text-white'>User Registration</h1>
+                <h1 className='bg-warning text-white p-2'>User Registration</h1>
+                {message && {message}}
                 <form onSubmit={handleSubmit}>
                     <div className='col-lg-4 col-md-4 mb-2 float-left'>
                         
@@ -143,11 +150,26 @@ const Form = () => {
                     </select>
                     {errors.role_id && <p className="text-danger">{errors.role_id[0]}</p>}
                     </div>
-                    <button type="submit">Submit</button>
-                </form>
-                {message && <p>{message}</p>}
+                    <div className='col-lg-4 col-md-4 mb-2 float-left'>
+                        <textarea id='desc' name="description" className='form-control-sm'
+                             value={description}
+                             onChange={(e) => setDescription(e.target.value)}
+                             rows="4"
+                             placeholder='Description'
+                         />
+                         {errors.description && <div className="invalid-feedback">{errors.description[0]}</div>}
+                     
+                    </div>
+                    
+                    <div className='clearfix'></div>
                     <hr></hr>
-                <h2 className='bg-secondary text-dark'>User List</h2>
+                    <div className='col-lg-12 col-md-12 mb-2 float-left '>
+                        <button className='btn btn-primary float-right' type="submit">Submit</button>
+                    </div>
+                </form>
+                
+                   
+                <h2 className='bg-secondary text-dark p-2'>User List</h2>
                 <hr></hr>
                 <table className='table table-bordered'>
                     <thead>
@@ -165,11 +187,11 @@ const Form = () => {
                                 <td>{user.name}</td>
                                 <td>{user.email}</td>
                                 <td>{user.phone}</td>
-                                <td>{user.role_id}</td>
+                                <td>{user.role_id/* {roleName.map(role => ( {role.role_name})} */}</td>
                                 <td>
                                     {user.profile_image && (
                                         <img
-                                            src={`/storage/${user.profile_image}`}
+                                            src={`${user.profile_image}`}
                                             alt="Profile"
                                             style={{ width: '50px', height: '50px' }}
                                         />
