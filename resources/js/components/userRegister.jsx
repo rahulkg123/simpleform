@@ -9,8 +9,7 @@ const Form = () => {
     const [phone, setPhone] = useState('');
     const [profileImage, setProfileImage] = useState(null);
     const [roleId, setRoleId] = useState('');
-    const [roleName, setRoleName] = useState('');
-    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState('');
     const [roles, setRoles] = useState([]);
     const [users, setUsers] = useState([]);
     const [errors, setErrors] = useState({});
@@ -31,9 +30,6 @@ const Form = () => {
         try {
             const response = await axios.get('/users');
             setUsers(response.data);
-            const roleNames = await axios.get('/user/'+response.data.id);
-            console.log(roleNames.data);
-            setRoleName(roleNames.data);
         } catch (error) {
             console.error('Error fetching users:', error);
         }
@@ -57,27 +53,29 @@ const Form = () => {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            setMessage('<i className="float-right badge bg-success mb-2">' + response.data.message+ '</i>');
+
+            console.log(response);
+            setMessages(response.data.message);
             fetchUsers(); // Refresh the user list after submission
-            setErrors({});
         } catch (error) {
             console.log(error)
             if (error.response && error.response.status === 422) {
                 setErrors(error.response.data.errors);
             } else {
-                setMessage('<i className="badge bg-danger mb-2">Error submitting form.</i>');
+                setMessages('Error submitting form.');
                 console.error('Submission error:', error);
             }
             //setMessage('Error submitting form.');
         }
     };
-
+    //console.log(message);
     return (
         <div className='container mt-3'>
             <div className='row'>
                 
                 <h1 className='bg-warning text-white p-2'>User Registration</h1>
-                {message && {message}}
+                
+                {messages && <div className="alert alert-info mt-3">{messages}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className='col-lg-4 col-md-4 mb-2 float-left'>
                         
@@ -179,6 +177,7 @@ const Form = () => {
                             <th>Phone</th>
                             <th>Role</th>
                             <th>Profile Image</th>
+                            <th>Description</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -187,7 +186,7 @@ const Form = () => {
                                 <td>{user.name}</td>
                                 <td>{user.email}</td>
                                 <td>{user.phone}</td>
-                                <td>{user.role_id/* {roleName.map(role => ( {role.role_name})} */}</td>
+                                <td>{!user.role_name.message && user.role_name/* {roleName.map(role => ( {role.role_name})} */}</td>
                                 <td>
                                     {user.profile_image && (
                                         <img
@@ -197,6 +196,7 @@ const Form = () => {
                                         />
                                     )}
                                 </td>
+                                <td>{user.description}</td>
                             </tr>
                         ))}
                     </tbody>

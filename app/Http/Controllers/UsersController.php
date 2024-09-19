@@ -13,12 +13,26 @@ class UsersController extends Controller
     public function index()
     {
         $users = Users::all();
-        return response()->json($users);
+        $userList = [];
+        foreach($users as $user){
+            $list = [];
+            $list['id']=$user->id;
+            $list['name']=$user->name;
+            $list['email']=$user->email;
+            $list['phone']=$user->phone;
+            $list['role_name']=self::show($user->role_id)->original;
+            $list['description']=$user->description;
+            $list['profile_image']=$user->profile_image;
+            $userList[]=$list;
+        }
+        return response()->json($userList);
     }
     public function saveUserData(Request $request)
     {
+        $data = $request->all();
+
         // Validate the request data
-        $validatedData = Validator::make($request->all(),[
+        $validatedData = Validator::make($data,[
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email|max:255',
             'phone' => ['required', 'regex:/^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/', 'min:10', 'max:13'],
@@ -59,40 +73,46 @@ class UsersController extends Controller
             $file = $request->file('profile_image');
             // Store file in 'public/profile_images' directory
             $filePath = $file->store('profile_images', 'public');
+            $data['profile_image'] = '/storage/' . $filePath;
+            //$request->merge($data);
         }
+        //dd($request->all());
+        //$request->profile_image = $filePath;
         // Save the form submission to the database
         //$formSubmission = FormSubmission::create($validatedData);
-        $formSubmission=  /* User::create([
+        $formSubmission=  Users::create($data);/* $request->all() User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'profile_image' => $filePath,
                 'description' => $request->description,
                 'role_id' => $request->role_id,
-            ]); */ Users::create($request->all());
+            ]); */ 
 
         // Return a success response
         return response()->json([
             'success' => true,
             'data' => $formSubmission,
+            'file' => $data,
             'message' => 'Form submitted successfully!',
         ], 201);
     }
 
     public function show($id)
     {
-        $user = User::with('role_id')->find($id);
-
+        $user = Users::with('role')->find($id);   
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        return response()->json([
+        return response()->json($user->role_id ? $user->role->name : 'No Role');
+
+        /* return response()->json([
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
             'role_name' => $user->role_id ? $user->role->name : 'No Role'
-        ]);
+        ]); */
     }
     
 }
